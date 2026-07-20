@@ -1,0 +1,173 @@
+name: CI — IoT Secure Asset Monitoring (STM32 F446RE)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  # ─────────────────────────────────────────────────────
+  # JOB 1 — Spell Check (README + comments + Python)
+  # ─────────────────────────────────────────────────────
+  spell-check:
+    name: 🔤 Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run codespell
+        uses: codespell-project/actions-codespell@v2
+        with:
+          skip: ".git,*.bin,*.hex,Drivers"
+          ignore_words_list: >
+            UID,uid,crc,CRC,FIFO,fifo,ISR,isr,IRQ,irq,
+            initialise,initialised,HAL,hal,STM,stm,
+            RFID,rfid,DHT,dht,RTC,rtc,SPI,spi,I2C,i2c,
+            UART,uart,GPIO,gpio,MOSI,miso,MISO,mosi,
+            EXTI,exti,MCU,mcu,ARM,Cortex,cortex,
+            DLMS,COSEM,MQTT,mqtt,DCU,dcu,AMI,ami,
+            APEPDCL,apepdcl,AICTE,aicte,NPTEL,nptel,
+            CGPA,cgpa,EEE,eee,PLC,plc
+
+  # ─────────────────────────────────────────────────────
+  # JOB 2 — Python Simulator Tests
+  # ─────────────────────────────────────────────────────
+  simulator-test:
+    name: 🐍 Simulator Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pytest
+
+      - name: Check simulator syntax
+        run: python -m py_compile simulator/simulate.py
+
+      - name: Run simulator (automated mode)
+        run: python simulator/simulate.py
+        timeout-minutes: 2
+
+      - name: Run pytest (unit tests)
+        run: |
+          if [ -f simulator/test_simulate.py ]; then
+            pytest simulator/test_simulate.py -v
+          else
+            echo "No unit tests file yet — simulator smoke test passed above"
+          fi
+
+  # ─────────────────────────────────────────────────────
+  # JOB 3 — C Source Lint (cppcheck static analysis)
+  # ─────────────────────────────────────────────────────
+  c-lint:
+    name: 🔍 C Static Analysis (cppcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck on Core/Src
+        run: |
+          cppcheck \
+            --enable=warning,style,performance \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --inline-suppr \
+            --error-exitcode=1 \
+            -I Core/Inc \
+            Core/Src/
+
+  # ─────────────────────────────────────────────────────
+  # JOB 4 — Markdown Lint (README quality check)
+  # ─────────────────────────────────────────────────────
+  markdown-lint:
+    name: 📝 README Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint README.md
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: "README.md"
+
+  # ─────────────────────────────────────────────────────
+  # JOB 5 — Project Structure Validator
+  # ─────────────────────────────────────────────────────
+  structure-check:
+    name: 📁 Project Structure Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify required files exist
+        run: |
+          echo "Checking required project files..."
+          required_files=(
+            "README.md"
+            ".markdownlint.json"
+            "Core/Inc/main.h"
+            "Core/Inc/rc522.h"
+            "Core/Inc/dht11.h"
+            "Core/Inc/ds1307.h"
+            "Core/Inc/access_control.h"
+            "Core/Src/main.c"
+            "Core/Src/rc522.c"
+            "Core/Src/dht11.c"
+            "Core/Src/ds1307.c"
+            "Core/Src/access_control.c"
+            "simulator/simulate.py"
+          )
+          all_ok=true
+          for f in "${required_files[@]}"; do
+            if [ -f "$f" ]; then
+              echo "  ✅  $f"
+            else
+              echo "  ❌  MISSING: $f"
+              all_ok=false
+            fi
+          done
+          if [ "$all_ok" = false ]; then
+            echo ""
+            echo "ERROR: Some required files are missing!"
+            exit 1
+          fi
+          echo ""
+          echo "All required files present ✅"
+
+  # ─────────────────────────────────────────────────────
+  # JOB 6 — Summary Badge (runs after all jobs pass)
+  # ─────────────────────────────────────────────────────
+  all-checks-pass:
+    name: ✅ All Checks Passed
+    runs-on: ubuntu-latest
+    needs: [spell-check, simulator-test, c-lint, markdown-lint, structure-check]
+    steps:
+      - name: Summary
+        run: |
+          echo "============================================"
+          echo "  IoT Secure Asset Monitoring — CI PASSED"
+          echo "  STM32 F446RE | Yaswanth Chlliboina"
+          echo "============================================"
+          echo ""
+          echo "  ✅ Spell check passed"
+          echo "  ✅ Simulator runs correctly"
+          echo "  ✅ C static analysis passed"
+          echo "  ✅ README lint passed"
+          echo "  ✅ Project structure valid"
+          echo ""
+          echo "  Repo: github.com/Yaswanth-Ch-24/iot-secure-asset-monitoring"
