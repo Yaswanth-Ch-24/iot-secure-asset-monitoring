@@ -1,0 +1,31 @@
+# ============================================================
+# IoT Secure Asset Monitoring — Raspberry Pi 5 dependencies
+# ============================================================
+#
+# Install with:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+#
+# main.py runs with NONE of these installed — the hardware modules are
+# stubs that print (modules/rtc.py uses only the stdlib). Install these
+# when you start filling in the TODOs.
+# ============================================================
+
+# GPIO for the indicators, PIR edge and (on a Pi 5, with the lgpio
+# backend) the RC522 CS line. The PIR's real driver is a gpiozero
+# Button with bounce_time; the indicators are gpiozero LEDs.
+#   export GPIOZERO_PIN_FACTORY=lgpio
+gpiozero>=2.0
+lgpio>=0.2.2.0
+
+# RC522 RFID over /dev/spidev0.0 (modules/rfid.py).
+spidev>=3.6
+
+# For the DHT11's microsecond edge timestamps (modules/dht11.py). The
+# OS cannot bit-bang in userspace; pigpio samples edges in hardware.
+pigpio>=1.78
+
+# Optional, only for the TODO bodies in modules/rtc.py and wifi.py —
+# urllib3 is already in the stdlib's urllib, so wifi.py needs nothing.
+# Add `requests` here if you prefer it over urllib.
+# requests>=2.31

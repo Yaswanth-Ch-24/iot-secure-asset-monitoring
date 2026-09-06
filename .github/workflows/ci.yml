@@ -78,7 +78,7 @@ jobs:
       - name: Install cppcheck
         run: sudo apt-get install -y cppcheck
 
-      - name: Run cppcheck on Core/Src
+      - name: Run cppcheck on platforms/stm32f446re/Core/Src
         run: |
           cppcheck \
             --enable=warning,style,performance \
@@ -86,8 +86,8 @@ jobs:
             --suppress=unusedFunction \
             --inline-suppr \
             --error-exitcode=1 \
-            -I Core/Inc \
-            Core/Src/
+            -I platforms/stm32f446re/Core/Inc \
+            platforms/stm32f446re/Core/Src/
 
   # ─────────────────────────────────────────────────────
   # JOB 4 — Markdown Lint (README quality check)
@@ -120,17 +120,30 @@ jobs:
           required_files=(
             "README.md"
             ".markdownlint.json"
-            "Core/Inc/main.h"
-            "Core/Inc/rc522.h"
-            "Core/Inc/dht11.h"
-            "Core/Inc/ds1307.h"
-            "Core/Inc/access_control.h"
-            "Core/Src/main.c"
-            "Core/Src/rc522.c"
-            "Core/Src/dht11.c"
-            "Core/Src/ds1307.c"
-            "Core/Src/access_control.c"
             "simulator/simulate.py"
+            "platforms/stm32f446re/Core/Inc/main.h"
+            "platforms/stm32f446re/Core/Inc/rc522.h"
+            "platforms/stm32f446re/Core/Inc/dht11.h"
+            "platforms/stm32f446re/Core/Inc/ds1307.h"
+            "platforms/stm32f446re/Core/Inc/access_control.h"
+            "platforms/stm32f446re/Core/Src/main.c"
+            "platforms/stm32f446re/Core/Src/rc522.c"
+            "platforms/stm32f446re/Core/Src/dht11.c"
+            "platforms/stm32f446re/Core/Src/ds1307.c"
+            "platforms/stm32f446re/Core/Src/access_control.c"
+            "platforms/arduino-uno/src/main.cpp"
+            "platforms/arduino-uno/src/rfid.cpp"
+            "platforms/arduino-uno/src/pir.cpp"
+            "platforms/arduino-uno/src/dht11.cpp"
+            "platforms/arduino-uno/src/rtc.cpp"
+            "platforms/arduino-uno/src/wifi.cpp"
+            "platforms/esp32/src/main.cpp"
+            "platforms/raspberrypi5/main.py"
+            "platforms/raspberrypi5/modules/rfid.py"
+            "platforms/raspberrypi5/modules/pir.py"
+            "platforms/raspberrypi5/modules/dht11.py"
+            "platforms/raspberrypi5/modules/rtc.py"
+            "platforms/raspberrypi5/modules/wifi.py"
           )
           all_ok=true
           for f in "${required_files[@]}"; do
